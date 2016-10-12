@@ -24,6 +24,7 @@ class t411(TorrentProvider, MovieProvider):
         'detail' : 'https://www.t411.ch/torrents/?id=%s',
         'search' : 'https://api.t411.ch/torrents/search/%s?limit=200&cid=631',
         'download' : 'https://api.t411.ch/torrents/download/%s',
+        'subcat' : [631, 455]
     }
 
     cat_ids = [
@@ -37,25 +38,27 @@ class t411(TorrentProvider, MovieProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
         log.debug('Searching T411 for %s' % (title))
-        url = self.urls['search'] % (title.replace(':', ''))
-        try:
-            output = self.getJsonData(url,cache_timeout = 30, headers = {"Authorization": self.token})
-        except: pass
-        for entry in output['torrents']:
+        urlS = [self.urls['search'] % (title.replace(':', ''), u) for u in self.urls['subcat']]
+        for url in urlS:
+            # OLD url = self.urls['search'] % (title.replace(':', ''))
             try:
-                log.debug(entry)
-                #log.debug("NAME: "+entry['name']+"  SIZE:  "+self.parseSize(str(tryInt(tryInt(entry['size'])/1024))+"kb"))
-                results.append({
-                    'id': entry['id'],
-                    'name': entry['name'],
-                    'url': self.urls['download'] % entry['id'],
-                    'detail_url': self.urls['detail'] % entry['id'],
-                    'size': self.parseSize(str(tryInt(tryInt(entry['size'])/1024))+"kb"),
-                    'seeders': entry['seeders'],
-                    'leechers': entry['leechers'],
-                    })
-            except:
-                error = traceback.format_exc()
+                output = self.getJsonData(url,cache_timeout = 30, headers = {"Authorization": self.token})
+            except: pass
+            for entry in output['torrents']:
+                try:
+                    log.debug(entry)
+                    #log.debug("NAME: "+entry['name']+"  SIZE:  "+self.parseSize(str(tryInt(tryInt(entry['size'])/1024))+"kb"))
+                    results.append({
+                        'id': entry['id'],
+                        'name': entry['name'],
+                        'url': self.urls['download'] % entry['id'],
+                        'detail_url': self.urls['detail'] % entry['id'],
+                        'size': self.parseSize(str(tryInt(tryInt(entry['size'])/1024))+"kb"),
+                        'seeders': entry['seeders'],
+                        'leechers': entry['leechers'],
+                        })
+                except:
+                    error = traceback.format_exc()
 
     def login(self):
         log.debug('Try to login on T411')
